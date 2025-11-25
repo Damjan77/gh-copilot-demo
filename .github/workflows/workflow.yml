@@ -1,0 +1,53 @@
+            # Find and replace %%VERSION%% by the GitHub run id in every appmanifest.yml file
+            - name: Replace %%VERSION%% in appmanifest.yml files
+              run: |
+                find . -name 'appmanifest.yml' -exec sed -i 's/%%VERSION%%/${{ github.run_id }}/g' {} +
+      # Run tests on the album-api image
+      - name: Run tests on album-api image
+        run: |
+          docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/album-api:${{ github.run_id }} dotnet test /app/albums-api.dll
+
+      # Deploy the album-api image to the dev AKS cluster
+      - name: Set up Azure CLI
+        uses: azure/cli@v2
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to AKS
+        run: |
+          az aks get-credentials --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} --name ${{ secrets.AKS_CLUSTER_NAME }}
+          kubectl set image deployment/album-api album-api=${{ secrets.DOCKERHUB_USERNAME }}/album-api:${{ github.run_id }} --namespace=dev
+# GitHub Action workflow that runs on push to main branch
+# Docker build and push the album-api image to ACR
+
+name: Build and Push album-api Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Build Docker image and tag with GitHub run id
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/album-api:${{ github.run_id }} ./albums-api
+
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Push Docker image to Docker Hub
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/album-api:${{ github.run_id }}

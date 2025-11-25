@@ -21,11 +21,40 @@ namespace albums_api.Controllers
             return Ok(albums);
         }
 
+        // GET albums/sort/{by}
+        [HttpGet("sort/{by}")]
+        public IActionResult Sort(string by)
+        {
+            var albums = Album.GetAll();
+            List<Album> sorted;
+            switch (by.ToLower())
+            {
+                case "title":
+                    sorted = albums.OrderBy(a => a.Title).ToList();
+                    break;
+                case "artist":
+                    sorted = albums.OrderBy(a => a.Artist).ToList();
+                    break;
+                case "genre":
+                    // Genre not present in Album, so return unsorted
+                    sorted = albums;
+                    break;
+                default:
+                    return BadRequest("Invalid sort key. Use 'title', 'artist', or 'genre'.");
+            }
+            return Ok(sorted);
+        }
+
         // GET api/<AlbumController>/5
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            return Ok();
+            var album = Album.GetAll().FirstOrDefault(a => a.Id == id);
+            if (album == null)
+            {
+                return NotFound();
+            }
+            return Ok(album);
         }
 
     }

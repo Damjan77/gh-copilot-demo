@@ -129,3 +129,9 @@ output env array=[
   'Storage account name: ${storageAccount.name}'
   'Storage container name: ${blobContainer.name}'
 ]
+
+// Container Registry
+// TODO: Add resource definition for Azure Container Registry (ACR)
+
+// Azure Open AI resource
+// TODO: Add resource definition for Azure OpenAI (Microsoft.CognitiveServices/accounts with kind="OpenAI")
